@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import vm from 'node:vm'
+import { createHash } from 'node:crypto'
 
 const source = await readFile(new URL('../videos.js', import.meta.url), 'utf8')
+const html = await readFile(new URL('../index.html', import.meta.url), 'utf8')
+for (const file of ['app.css', 'videos.js', 'app.js']) {
+  const bytes = await readFile(new URL('../' + file, import.meta.url))
+  const version = createHash('sha256').update(bytes).digest('hex').slice(0, 12)
+  assert.ok(html.includes(`./${file}?v=${version}`), `${file} 的缓存版本未更新，请运行 tools/export-videos.mjs`)
+}
 const context = { window: {} }
 vm.runInNewContext(source, context)
 const data = context.window.VIDEO_LIBRARY

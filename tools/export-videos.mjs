@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { buildSpecialChapters } from './special-topics.mjs'
 
 const source = process.argv[2] || new URL('../../kaoyan-workbench/data/app-data.json', import.meta.url)
@@ -48,6 +49,17 @@ const data = { title: '考研数学视频导航', author: '澄潇宇 · 数学�
   chapters: [...chapters.map(({ keys, ...chapter }) => chapter), ...specials] }
 const json = JSON.stringify(data).replace(/</g, '\\u003c')
 await writeFile(new URL('../videos.js', import.meta.url), `window.VIDEO_LIBRARY = ${json};\n`, 'utf8')
+// 文件内容变化时更新资源网址，避免新页面仍读取浏览器缓存中的旧目录。
+const indexPath = new URL('../index.html', import.meta.url)
+const html = await readFile(indexPath, 'utf8')
+let versioned = html
+for (const file of ['app.css', 'videos.js', 'app.js']) {
+  const bytes = await readFile(new URL('../' + file, import.meta.url))
+  const version = createHash('sha256').update(bytes).digest('hex').slice(0, 12)
+  const pattern = new RegExp(`((?:src|href)="\\./${file.replace('.', '\\.')})(?:\\?v=[^"]*)?"`, 'g')
+  versioned = versioned.replace(pattern, `$1?v=${version}"`)
+}
+if (versioned !== html) await writeFile(indexPath, versioned, 'utf8')
 console.log(JSON.stringify({ chapters: data.chapters.length,
   segments: data.chapters.flatMap(c => c.items).filter(i => i.kind === 'chapter').length,
   points: data.chapters.flatMap(c => c.items).filter(i => i.kind === 'point').length }))
