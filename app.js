@@ -20,31 +20,38 @@
 
   function row(item) {
     const url = `https://www.bilibili.com/video/${item.bvid}?p=${item.page}&t=${Math.round(item.startSec)}`
+    const sourceLabel = { comment: '评论区时间轴', official: '视频官方章节', whole: '整段入口 · 待细分' }[item.source?.type]
     return `<div class="video-row"><div class="video-info"><h3 class="video-title">${esc(item.title)}</h3>
-      <div class="video-meta"><span>${item.kind === 'point' ? '考点讲解' : '章节片段'}</span>${item.uncertain ? '<span>约略定位</span>' : ''}<span>${Math.max(1, Math.round((item.endSec - item.startSec) / 60))} 分钟${item.page > 1 ? ` · P${item.page}` : ''}</span></div></div>
+      <div class="video-meta"><span>${item.kind === 'point' ? '考点讲解' : '章节片段'}</span>${item.uncertain ? '<span>约略定位</span>' : ''}<span>${Math.max(1, Math.round((item.endSec - item.startSec) / 60))} 分钟${item.page > 1 ? ` · P${item.page}` : ''}</span>${sourceLabel ? `<a class="source-link" href="${esc(item.source.url)}" target="_blank" rel="noopener noreferrer">${sourceLabel} ↗</a>` : ''}</div></div>
       <a class="play-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(item.title)}，从 ${time(item.startSec)} 开始播放"><span class="play-icon" aria-hidden="true">▶</span>${time(item.startSec)} – ${time(item.endSec)}<span aria-hidden="true">↗</span></a></div>`
   }
 
   function groups(items, searching) {
     const groups = new Map()
     for (const item of items) {
-      const key = item.kind === 'point' ? `考点 · ${item.section}` : '章节整段'
+      const key = item.kind === 'point' ? `考点 · ${item.section}` : item.source ? `章节 · ${item.section}` : '章节整段'
       if (!groups.has(key)) groups.set(key, [])
       groups.get(key).push(item)
     }
-    return [...groups].sort(([a], [b]) => Number(a === '章节整段') - Number(b === '章节整段')).map(([title, list], index) =>
+    return [...groups].sort(([a], [b]) => Number(a.startsWith('章节')) - Number(b.startsWith('章节'))).map(([title, list], index) =>
       `<details class="section-group"${searching || index === 0 ? ' open' : ''}><summary><span>${esc(title)}</span><span class="group-count">${list.length} 个视频落点</span><span class="caret" aria-hidden="true">›</span></summary>${list.map(row).join('')}</details>`).join('')
   }
 
   function render() {
     const q = norm(search.value)
     clear.hidden = !q
-    document.querySelector('#chapters').innerHTML = chapters.map((c, i) =>
-      `<button type="button" class="chapter-button" data-chapter="${c.id}" aria-pressed="${!q && c.id === selected}"><span class="chapter-number">${String(i + 1).padStart(2, '0')}</span><span>${esc(c.title)}</span><span class="chapter-count">${c.items.length}</span></button>`).join('')
+    document.querySelector('#chapters').innerHTML = chapters.map((c, i) => {
+      const group = c.group || '数二 · 原有内容'
+      const heading = i === 0 || group !== (chapters[i - 1].group || '数二 · 原有内容') ? `<div class="chapter-group">${esc(group)}</div>` : ''
+      return `${heading}<button type="button" class="chapter-button" data-chapter="${c.id}" aria-pressed="${!q && c.id === selected}"><span class="chapter-number">${String(i + 1).padStart(2, '0')}</span><span>${esc(c.title)}</span><span class="chapter-count">${c.items.length}</span></button>`
+    }).join('')
     document.querySelectorAll('[data-kind]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.kind === kind)))
     const chapter = chapters.find(c => c.id === selected)
     document.querySelector('#resultTitle').textContent = q ? `搜索“${search.value.trim()}”` : chapter.title
-    document.querySelector('#resultEyebrow').textContent = q ? 'SEARCH ALL CHAPTERS' : `CHAPTER ${String(chapters.indexOf(chapter) + 1).padStart(2, '0')}`
+    document.querySelector('#resultEyebrow').textContent = q ? 'SEARCH ALL CHAPTERS' : chapter.audience || `CHAPTER ${String(chapters.indexOf(chapter) + 1).padStart(2, '0')}`
+    const note = document.querySelector('#chapterNote')
+    note.hidden = Boolean(q) || !chapter.note
+    note.textContent = chapter.note || ''
     const tokens = q.split(' ').filter(Boolean)
     const matches = (q ? chapters : [chapter]).map(c => ({ ...c, items: c.items.filter(i =>
       (kind === 'all' || i.kind === kind) && tokens.every(t => norm(`${c.title} ${i.section} ${i.title}`).includes(t))) })).filter(c => c.items.length)

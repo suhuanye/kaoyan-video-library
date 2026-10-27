@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises'
+import { buildSpecialChapters } from './special-topics.mjs'
 
 const source = process.argv[2] || new URL('../../kaoyan-workbench/data/app-data.json', import.meta.url)
 const store = JSON.parse(await readFile(source, 'utf8'))
@@ -42,10 +43,11 @@ function videoFields(v) {
   return { bvid: v.bvid, page: v.page, startSec: v.startSec, endSec: v.endSec }
 }
 
-const data = { title: '数二视频导航', author: '澄潇宇 · 数学大观',
-  chapters: chapters.map(({ keys, ...chapter }) => chapter) }
+const specials = buildSpecialChapters(JSON.parse(await readFile(new URL('../data/special-topics.json', import.meta.url), 'utf8')))
+const data = { title: '考研数学视频导航', author: '澄潇宇 · 数学大观',
+  chapters: [...chapters.map(({ keys, ...chapter }) => chapter), ...specials] }
 const json = JSON.stringify(data).replace(/</g, '\\u003c')
 await writeFile(new URL('../videos.js', import.meta.url), `window.VIDEO_LIBRARY = ${json};\n`, 'utf8')
-console.log(JSON.stringify({ chapters: chapters.length,
-  segments: chapters.flatMap(c => c.items).filter(i => i.kind === 'chapter').length,
-  points: chapters.flatMap(c => c.items).filter(i => i.kind === 'point').length }))
+console.log(JSON.stringify({ chapters: data.chapters.length,
+  segments: data.chapters.flatMap(c => c.items).filter(i => i.kind === 'chapter').length,
+  points: data.chapters.flatMap(c => c.items).filter(i => i.kind === 'point').length }))

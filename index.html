@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#176455">
-  <meta name="description" content="数学二视频考点导航，按章节查找数学大观讲解，一键跳转到对应视频时间。手机和电脑均可使用。">
-  <title>数二视频导航 · 数学大观</title>
+  <meta name="description" content="考研数学视频考点导航，包含数二原有内容及数一数三专项。按章节查找数学大观讲解，一键跳到视频对应时间。手机和电脑均可使用。">
+  <title>考研数学视频导航 · 数学大观</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./app.css">
   <script src="./videos.js" defer></script>
@@ -13,7 +13,7 @@
 </head>
 <body>
   <header class="masthead">
-    <a class="brand" href="./" aria-label="返回首页"><span class="brand-mark">数</span><span>考研 · 数学二</span></a>
+    <a class="brand" href="./" aria-label="返回首页"><span class="brand-mark">数</span><span>考研 · 数学视频导航</span></a>
     <span class="header-note">澄潇宇 · 数学大观</span>
   </header>
   <main>
@@ -44,6 +44,7 @@
             <button type="button" data-kind="chapter" aria-pressed="false">章节整段</button>
           </div>
         </div>
+        <p class="chapter-note" id="chapterNote" hidden></p>
         <p class="result-count" id="resultCount" role="status" aria-live="polite"></p>
         <div id="results"></div>
         <noscript>请启用浏览器的 JavaScript 以查看视频目录。</noscript>
@@ -51,6 +52,6 @@
       </section>
     </div>
   </main>
-  <footer><span>数二视频导航</span><span>视频版权归原作者及平台所有 · 本站仅提供目录与跳转</span></footer>
+  <footer><span>考研数学视频导航</span><span>视频版权归原作者及平台所有 · 本站仅提供目录与跳转</span></footer>
 </body>
 </html>
